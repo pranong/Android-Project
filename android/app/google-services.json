@@ -1,0 +1,130 @@
+{
+  "project_info": {
+    "project_number": "716682422710",
+    "firebase_url": "https://sensorsdatabase.firebaseio.com",
+    "project_id": "sensorsdatabase",
+    "storage_bucket": "sensorsdatabase.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:716682422710:android:fc179e98fbffb18a",
+        "android_client_info": {
+          "package_name": "com.example.punkrawk.safelifeapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "716682422710-ht62kimukl23me2efitut31cscrp3lnn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.punkrawk.safelifeapp",
+            "certificate_hash": "6514a690f7ddc315e6078aaf9086040cc06fd4f1"
+          }
+        },
+        {
+          "client_id": "716682422710-tpr60i03naptthlccquigdaknl599sa6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBIohzEGezqgyRer-v_y-oBy4VqJIUjuk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "716682422710-tpr60i03naptthlccquigdaknl599sa6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:716682422710:android:c9cf8bba1911b5bb",
+        "android_client_info": {
+          "package_name": "com.punkrawk.aedset"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "716682422710-apcb938v77bhis6d587lki3s2oljp0kf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.punkrawk.aedset",
+            "certificate_hash": "6514a690f7ddc315e6078aaf9086040cc06fd4f1"
+          }
+        },
+        {
+          "client_id": "716682422710-tpr60i03naptthlccquigdaknl599sa6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBIohzEGezqgyRer-v_y-oBy4VqJIUjuk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "716682422710-tpr60i03naptthlccquigdaknl599sa6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:716682422710:android:b6417952e5cb4a4d",
+        "android_client_info": {
+          "package_name": "com.aedproject"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "716682422710-tpr60i03naptthlccquigdaknl599sa6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBIohzEGezqgyRer-v_y-oBy4VqJIUjuk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
