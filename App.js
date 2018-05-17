@@ -50,13 +50,9 @@ class otherScreen extends React.Component {
 }
 
 class videoScreen extends React.Component {
-  static navigationOptions = {
-    title: 'Video Calling'
-  };
   render() {
     return (
-        <Test2 />
-
+        <Text>Video</Text>
     );
   }
 }

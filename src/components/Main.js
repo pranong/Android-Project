@@ -1,398 +1,418 @@
-import Test2 from './Test2'
-import React, { Component } from "react";
-import { AppRegistry, View, Text, FlatList, ActivityIndicator, ListView, ScrollView, Alert, TouchableOpacity, TouchableHighlight, Image, StyleSheet, Button } from "react-native";
-import { List, ListItem, SearchBar } from "react-native-elements";
-import NavigationBar from 'react-native-navbar';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-var TimerMixin = require('react-timer-mixin');
-import  Camera  from 'react-native-camera';
-import { TabNavigator, TabBarBottom, StackNavigator } from 'react-navigation';
-import RNFetchBlob from 'react-native-fetch-blob'
-import ImagePicker from 'react-native-image-crop-picker'
+'use strict';
 
-import firebase from '../../firebase'
-var eventRef = firebase.database().ref("Event/");
+import React, { Component } from 'react';
+import {
+  AppRegistry,
+  StyleSheet,
+  Text,
+  TouchableHighlight,
+  TouchableOpacity,
+  View,
+  TextInput,
+  ListView,
+  Platform,
+  Image,
+  Picker,
+  Dimensions,
+} from 'react-native';
 
-class MainScreen extends React.Component {
-  static navigationOptions = {
-    title: 'Main'
+import io from 'socket.io-client';
+
+const socket = io.connect('https://react-native-webrtc.herokuapp.com', {transports: ['websocket']});
+
+import {
+  RTCPeerConnection,
+  RTCMediaStream,
+  RTCIceCandidate,
+  RTCSessionDescription,
+  RTCView,
+  MediaStreamTrack,
+  getUserMedia,
+} from 'react-native-webrtc';
+
+const configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
+
+const pcPeers = {};
+let localStream;
+
+function getLocalStream(isFront, callback) {
+
+  let videoSourceId;
+
+  // on android, you don't have to specify sourceId manually, just use facingMode
+  // uncomment it if you want to specify
+  if (Platform.OS === 'ios') {
+    MediaStreamTrack.getSources(sourceInfos => {
+      console.log("sourceInfos: ", sourceInfos);
+
+      for (const i = 0; i < sourceInfos.length; i++) {
+        const sourceInfo = sourceInfos[i];
+        if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
+          videoSourceId = sourceInfo.id;
+        }
+      }
+    });
+  }
+  getUserMedia({
+    audio: true,
+    video: {
+      mandatory: {
+        minWidth: 640, // Provide your own width, height and frame rate here
+        minHeight: 360,
+        minFrameRate: 30,
+      },
+      facingMode: (isFront ? "user" : "environment"),
+      optional: (videoSourceId ? [{sourceId: videoSourceId}] : []),
+    }
+  }, function (stream) {
+    console.log('getUserMedia success', stream);
+    callback(stream);
+  }, logError);
+}
+
+function join(roomID) {
+  socket.emit('join', roomID, function(socketIds){
+    console.log('join', socketIds);
+    for (const i in socketIds) {
+      const socketId = socketIds[i];
+      createPC(socketId, true);
+    }
+  });
+}
+
+function createPC(socketId, isOffer) {
+  const pc = new RTCPeerConnection(configuration);
+  pcPeers[socketId] = pc;
+
+  pc.onicecandidate = function (event) {
+    console.log('onicecandidate', event.candidate);
+    if (event.candidate) {
+      socket.emit('exchange', {'to': socketId, 'candidate': event.candidate });
+    }
   };
 
-  alert(n,i) {
-    Alert.alert(
-      'Alert',
-      'Lat: '+ n+', '+'Long: '+i,
-      [
-        {text: 'OK', onPress: () => console.log('OK Pressed')},
-        {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'}, 
-      ],
-      { cancelable: false }
-    )
+  function createOffer() {
+    pc.createOffer(function(desc) {
+      console.log('createOffer', desc);
+      pc.setLocalDescription(desc, function () {
+        console.log('setLocalDescription', pc.localDescription);
+        socket.emit('exchange', {'to': socketId, 'sdp': pc.localDescription });
+      }, logError);
+    }, logError);
   }
 
+  pc.onnegotiationneeded = function () {
+    console.log('onnegotiationneeded');
+    if (isOffer) {
+      createOffer();
+    }
+  }
+
+  pc.oniceconnectionstatechange = function(event) {
+    console.log('oniceconnectionstatechange', event.target.iceConnectionState);
+    if (event.target.iceConnectionState === 'completed') {
+      setTimeout(() => {
+        getStats();
+      }, 1000);
+    }
+    if (event.target.iceConnectionState === 'connected') {
+      createDataChannel();
+    }
+  };
+  pc.onsignalingstatechange = function(event) {
+    console.log('onsignalingstatechange', event.target.signalingState);
+  };
+
+  pc.onaddstream = function (event) {
+    console.log('onaddstream', event.stream);
+    container.setState({info: 'One peer join!'});
+
+    const remoteList = container.state.remoteList;
+    remoteList[socketId] = event.stream.toURL();
+    container.setState({ remoteList: remoteList });
+  };
+  pc.onremovestream = function (event) {
+    console.log('onremovestream', event.stream);
+  };
+
+  pc.addStream(localStream);
+  function createDataChannel() {
+    if (pc.textDataChannel) {
+      return;
+    }
+    const dataChannel = pc.createDataChannel("text");
+
+    dataChannel.onerror = function (error) {
+      console.log("dataChannel.onerror", error);
+    };
+
+    dataChannel.onmessage = function (event) {
+      console.log("dataChannel.onmessage:", event.data);
+      container.receiveTextData({user: socketId, message: event.data});
+    };
+
+    dataChannel.onopen = function () {
+      console.log('dataChannel.onopen');
+      container.setState({textRoomConnected: true});
+    };
+
+    dataChannel.onclose = function () {
+      console.log("dataChannel.onclose");
+    };
+
+    pc.textDataChannel = dataChannel;
+  }
+  return pc;
+}
+
+function exchange(data) {
+  const fromId = data.from;
+  let pc;
+  if (fromId in pcPeers) {
+    pc = pcPeers[fromId];
+  } else {
+    pc = createPC(fromId, false);
+  }
+
+  if (data.sdp) {
+    console.log('exchange sdp', data);
+    pc.setRemoteDescription(new RTCSessionDescription(data.sdp), function () {
+      if (pc.remoteDescription.type == "offer")
+        pc.createAnswer(function(desc) {
+          console.log('createAnswer', desc);
+          pc.setLocalDescription(desc, function () {
+            console.log('setLocalDescription', pc.localDescription);
+            socket.emit('exchange', {'to': fromId, 'sdp': pc.localDescription });
+          }, logError);
+        }, logError);
+    }, logError);
+  } else {
+    console.log('exchange candidate', data);
+    pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+  }
+}
+
+function leave(socketId) {
+  console.log('leave', socketId);
+  const pc = pcPeers[socketId];
+  const viewIndex = pc.viewIndex;
+  pc.close();
+  delete pcPeers[socketId];
+
+  const remoteList = container.state.remoteList;
+  delete remoteList[socketId]
+  container.setState({ remoteList: remoteList });
+  container.setState({info: 'One peer leave!'});
+}
+
+socket.on('exchange', function(data){
+  exchange(data);
+});
+socket.on('leave', function(socketId){
+  leave(socketId);
+});
+
+socket.on('connect', function(data) {
+  console.log('connect');
+  getLocalStream(true, function(stream) {
+    localStream = stream;
+    container.setState({selfViewSrc: stream.toURL()});
+    container.setState({status: 'ready', info: 'Please select Doctor bla bla'});
+  });
+});
+
+function logError(error) {
+  console.log("logError", error);
+}
+
+function mapHash(hash, func) {
+  const array = [];
+  for (const key in hash) {
+    const obj = hash[key];
+    array.push(func(obj, key));
+  }
+  return array;
+}
+
+function getStats() {
+  const pc = pcPeers[Object.keys(pcPeers)[0]];
+  if (pc.getRemoteStreams()[0] && pc.getRemoteStreams()[0].getAudioTracks()[0]) {
+    const track = pc.getRemoteStreams()[0].getAudioTracks()[0];
+    console.log('track', track);
+    pc.getStats(track, function(report) {
+      console.log('getStats report', report);
+    }, logError);
+  }
+}
+
+let container;
+
+export default class Test2 extends React.Component {
   constructor(props) {
     super(props);
+    console.ignoredYellowBox = ['Setting a timer', 'Remote debugger'];
+    // console.ignoredYellowBox = ['Remote debugger'];
     this.state = {
-      mapRegion: null,
-      lastLat: 0,
-      lastLong: 0,
-      latlng: [],
-      loading: false,
-      error: null,
-    }
+      info: 'Initializing',
+      status: 'init',
+      roomID: 'PranongPunkrawk',
+      isFront: true,
+      selfViewSrc: null,
+      remoteList: {},
+      textRoomConnected: false,
+      textRoomData: [],
+      textRoomValue: '',
+    };
   }
+  componentDidMount() {
+    container = this;
+  }
+  _press(event) {
+    this.refs.roomID.blur();
+    this.setState({status: 'connect', info: 'Connecting'});
+    console.log("Pressed status:" + this.state.status + " Info: " + this.state.info)
+    join(this.state.roomID);
+  }
+  _switchVideoType() {
+    const isFront = !this.state.isFront;
+    this.setState({isFront});
+    getLocalStream(isFront, function(stream) {
+      if (localStream) {
+        for (const id in pcPeers) {
+          const pc = pcPeers[id];
+          pc && pc.removeStream(localStream);
+        }
+        localStream.release();
+      }
+      localStream = stream;
+      container.setState({selfViewSrc: stream.toURL()});
 
-  
-	componentDidMount() {
-    TimerMixin.setInterval( () => { 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          this.setState({
-            lastLat: position.coords.latitude,
-            lastLong: position.coords.longitude,
-            error: null,
-          });
-        },
-        (error) => this.setState({ error: error.message }),
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
-      );
-   }, 3000);
-    this.watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        this.setState({
-          lastLat: position.coords.latitude,
-          lastLong: position.coords.longitude,
-          error: null,
-        });
-      },
-      (error) => this.setState({ error: error.message }),
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000, distanceFilter: 10 },
+      for (const id in pcPeers) {
+        const pc = pcPeers[id];
+        pc && pc.addStream(localStream);
+      }
+    });
+  }
+  receiveTextData(data) {
+    const textRoomData = this.state.textRoomData.slice();
+    textRoomData.push(data);
+    this.setState({textRoomData, textRoomValue: ''});
+  }
+  _textRoomPress() {
+    if (!this.state.textRoomValue) {
+      return
+    }
+    const textRoomData = this.state.textRoomData.slice();
+    textRoomData.push({user: 'Me', message: this.state.textRoomValue});
+    for (const key in pcPeers) {
+      const pc = pcPeers[key];
+      pc.textDataChannel.send(this.state.textRoomValue);
+    }
+    this.setState({textRoomData, textRoomValue: ''});
+  }
+  _renderTextRoom() {
+    return (
+      <View style={styles.listViewContainer}>
+        <ListView
+          dataSource={this.ds.cloneWithRows(this.state.textRoomData)}
+          renderRow={rowData => <Text>{`${rowData.user}: ${rowData.message}`}</Text>}
+          />
+        <TextInput
+          style={{width: 200, height: 30, borderColor: 'gray', borderWidth: 1}}
+          onChangeText={value => this.setState({textRoomValue: value})}
+          value={this.state.textRoomValue}
+        />
+        <TouchableHighlight
+          onPress={this._textRoomPress}>
+          <Text>Send</Text>
+        </TouchableHighlight>
+      </View>
     );
   }
-
-  componentWillUnmount() {
-    navigator.geolocation.clearWatch(this.watchId);
-  }
-
-
-  sendInfo() {
-    // navigator.geolocation.getCurrentPosition(
-    //   (position) => {
-    //     this.setState({
-    //       lastLat: position.coords.latitude,
-    //       lastLong: position.coords.longitude,
-    //       error: null,
-    //     });
-    //   },
-    //   (error) => this.setState({ error: error.message }),
-    //   { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
-    // );
-    if(this.state.lastLat == 0 || this.state.lastLong == 0){
-      Alert.alert('Generating the location. Please Try again later.');
-    }else{
-      var date = new Date().getDate();
-      var month = new Date().getMonth() + 1;
-      var year = new Date().getFullYear();
-
-      var hour = new Date().getHours(); 
-      var min = new Date().getMinutes();
-      var sec = new Date().getSeconds();
-
-      var fullDate = date + '/' + month + '/' + year;
-      var fullTime = hour + ':' + min + ':' + sec;
-
-      // var name = snapshot.name();
-
-      var ref = eventRef.push({date: fullDate, time: fullTime, lat: this.state.lastLat, lng: this.state.lastLong});
-      // var uid = ref.name();
-      var n = ref.toString().lastIndexOf("Event");
-      var num = (n + 6);
-      var uid = ref.toString().substring(num);
-      // var uid = '123698745'
-      console.log('Inref : ' + uid);
-      // Alert.alert(uid + ' ' + fullDate + '.....' + fullTime + '.....' + this.state.lastLat + ', ' + this.state.lastLong);
-      this.props.navigation.navigate('Second', uid)
-    }
-  }
-
   render() {
     return (
       <View style={styles.container}>
-        <View style={styles.logoContainer}>
-          <Image 
-          style={styles.logo}
-          source={require('../button.png')} />
-          <TouchableOpacity
-          onPress={() => this.sendInfo()}
-          disabled={this.state.lastLat == 0 ? true : false}
-          style={styles.buttonContainer}>
-            <Text style={styles.button}>
-              <Ionicons
-              name='ios-call'
-              size={35}
-              color='white'
-            />
-           &nbsp;&nbsp;&nbsp;Call 1669</Text>
-          </TouchableOpacity>
-          <Text>Latitude: {this.state.lastLat}</Text>
-        <Text>Longitude: {this.state.lastLong}</Text>
-        {this.state.error ? <Text>Error: {this.state.error}</Text> : null}
+        <Text style={styles.welcome}>
+          {this.state.info}
+        </Text>
+        {this.state.textRoomConnected}
+        <View style={{flexDirection: 'row'}}>
         </View>
+        { this.state.status == 'ready' ?
+          (<View>
+            <Picker
+              selectedValue={this.state.language}
+              style={{ height: 50, width: 200 }}
+              onValueChange={(itemValue, itemIndex) => this.setState({language: itemValue})}>
+              <Picker.Item label="Doctor A" value="Doctor A" />
+              <Picker.Item label="Doctor B" value="Doctor B" />
+              <Picker.Item label="Doctor C" value="Doctor C" />
+              <Picker.Item label="Doctor D" value="Doctor D" />
+            </Picker>
+            <TextInput
+              ref='roomID'
+              autoCorrect={false}
+              style={{width: 200, height: 40, borderColor: 'gray', borderWidth: 1}}
+              onChangeText={(text) => this.setState({roomID: text})}
+              value={this.state.roomID}
+            />
+            <TouchableHighlight
+            style={{borderWidth: 1, borderColor: 'black'}}
+              onPress={() => join(this.state.roomID)}>
+              <Text>Enter room</Text>
+            </TouchableHighlight>
+          </View>) : null
+        }
+        <TouchableOpacity onPress={this._switchVideoType.bind(this)}>
+            <Image 
+              style={{width: 50, height: 50, alignSelf: 'flex-end', opacity: .5}}
+              source={{uri: 'https://cdn.icon-icons.com/icons2/510/PNG/512/ios7-reverse-camera_icon-icons.com_50174.png'}} 
+            />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={this._switchVideoType.bind(this)}>
+            <Image 
+              style={{width: 500, height: 500, position: "absolute", justifyContent: 'center', alignItems: 'center', opacity: .5}}
+              source={{uri: 'https://cdn.icon-icons.com/icons2/510/PNG/512/ios7-reverse-camera_icon-icons.com_50174.png'}} 
+            />
+        </TouchableOpacity>
+        <RTCView streamURL={this.state.selfViewSrc} style={styles.selfView}/>
+        {
+          mapHash(this.state.remoteList, function(remote, index) {
+            return <RTCView key={index} streamURL={remote} style={styles.remoteView}/>
+          })
+        }
       </View>
     );
   }
 }
 
-class secondScreen extends React.Component {
-  static navigationOptions = {
-    title: 'Take a Picture'
-  };
-  takePicture() {
-    const options = {}
-    this.camera.capture({metadata: options}).then((data) => {
-      console.log(data)
-    }).catch((error) => {
-      console.log(error)
-    })
-  }
-  // takePicture = async function() {
-  //   if (this.camera) {
-  //     const options = { quality: 0.5, base64: true };
-  //     const data = await this.camera.takePictureAsync(options)
-  //     console.log(data.uri);
-  //   }
-  // };
-  render() {
-    return (
-      <View style={styles.container2}>
-        <Camera
-          ref={(cam) => {
-            this.camera = cam
-          }}
-          style={styles.view}
-          aspect={Camera.constants.Aspect.fill}>
-            <View style={styles.buttonContainer2}>
-              <TouchableOpacity
-                onPress={() => this.props.navigation.navigate('Third', this.props.navigation.state.params)}
-                style={[styles.bubble, styles.button2]}
-              >
-                <Text>Next</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={this.takePicture.bind(this)}
-                style={[styles.bubble, styles.button2]}
-              >
-                <Text>Capture</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                onPress={console.log(this.props.navigation)}
-                style={[styles.bubble, styles.button2]}
-              >
-                <Text>log</Text>
-              </TouchableOpacity>
-            </View>
-        </Camera>
-      </View>
-    );
-  }
-}
-
-class thirdScreen extends React.Component {
-  static navigationOptions = {
-    title: 'Upload Image'
-  };
-  constructor(props) {
-    super(props)
-    this.state = {
-      loading: false,
-      dp: null,
-      noImg: 'http://sanjivanihospitalsirsa.com/wp-content/uploads/2017/03/noimage.gif'
-     }
-   }
-   openPicker(){
-     this.setState({ loading: true })
-     const Blob = RNFetchBlob.polyfill.Blob
-     const fs = RNFetchBlob.fs
-     window.XMLHttpRequest = RNFetchBlob.polyfill.XMLHttpRequest
-     window.Blob = Blob
-     //const { uid } = this.state.user
-     const uid = this.props.navigation.state.params
-     ImagePicker.openPicker({
-       width: 300,
-       height: 300,
-       cropping: true,
-       mediaType: 'photo'
-     }).then(image => {
- 
-       const imagePath = image.path
- 
-       let uploadBlob = null
- 
-       let imgId = Math.floor(Math.random() * (99999 - 10000)) + 10000;
- 
-       const imageRef = firebase.storage().ref(uid).child(imgId + ".jpg")
-       let mime = 'image/jpg'
-       fs.readFile(imagePath, 'base64')
-         .then((data) => {
-           //console.log(data);
-           return Blob.build(data, { type: `${mime};BASE64` })
-       })
-       .then((blob) => {
-           uploadBlob = blob
-           return imageRef.put(blob, { contentType: mime })
-         })
-         .then(() => {
-           uploadBlob.close()
-           return imageRef.getDownloadURL()
-         })
-         .then((url) => {
- 
-           let userData = {}
-           //userData[dpNo] = url
-           //firebase.database().ref('users').child(uid).update({ ...userData})
- 
-           let obj = {}
-           obj["loading"] = false
-           obj["dp"] = url
-           this.setState(obj)
-           eventRef.child(uid).child("img").push({url: url});
- 
-         })
-         .catch((error) => {
-           console.log(error)
-         })
-     })
-     .catch((error) => {
-       console.log(error)
-     })
-   }
-   render() {
-     const dpr = this.state.dp ? 
-        (<TouchableOpacity 
-         onPress={ () => this.openPicker() }>
-           <Image
-           style={{width: 100, height: 100, margin: 5}}
-           source={{uri: this.state.dp}}/>
-         </TouchableOpacity>
-         ) : (<TouchableOpacity 
-          onPress={ () => this.openPicker() }>
-            <Image
-            style={{width: 100, height: 100, margin: 5}}
-            source={{uri: this.state.noImg}}/>
-          </TouchableOpacity>)
-        
- 
-     const dps = this.state.loading ? <ActivityIndicator animating={this.state.loading} /> : (<View style={styles.container}>
-       <View style={{flexDirection: "row"}}>
-         { dpr }
-         
-       </View>
-     </View>)
- 
-     return (
-       <View style={styles.container}>
-         { dps }
-         <Button
-           onPress={ () => this.openPicker() }
-           title={ "openPicker" }/>
-       </View>
-     );
-   }
-}
-
-
-export default StackNavigator(
-  { 
-    Main: { screen: MainScreen },
-    Second: { screen: secondScreen },
-    Third: { screen: thirdScreen },
-  })
-  
-
-  
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-    width: '100%'
+  selfView: {
+    width: 200,
+    height: 150,
+    position: "absolute",
+    bottom: 10,
+    right: -50
   },
-  button: {
+  remoteView: {
+    width: Dimensions.get('window').width,
+    height: 150,
+  },
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    alignSelf: 'flex-end',
+    marginTop: -5,
+    position: 'absolute', // add if dont work with above
+  },
+  welcome: {
     fontSize: 20,
     textAlign: 'center',
-    fontWeight: '700',
-    // margin: 10,
-    color: 'white',
-    paddingVertical: 10,
+    margin: 10,
   },
-  buttonContainer: {
-    // fontSize: 20,
-    // textAlign: 'center',
-    // margin: 10,
-    // color: 'white',
-    backgroundColor: 'skyblue',
-    // paddingVertical: 5,
-    borderRadius: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },    
-  logo: {
-    height: 200,
-    width: 200,
-  },
-  logoContent: {
-    justifyContent: 'center',
-    flexGrow: 1,
-    alignItems: 'center',
-  },
-  logocontainer: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
-  container2: {
-    flex: 1,
-    flexDirection: 'row'
-  },
-  view: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center'
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: 'steelblue',
-    borderRadius: 10,
-    color: 'red',
-    padding: 15,
-    margin: 45
-  },
-  bubble: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 20,
-  },
-  latlng: {
-    width: 200,
-    alignItems: 'stretch',
-  },
-  button2: {
-    width: 80,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    marginHorizontal: 10,
-  },
-  buttonContainer2: {
-    flexDirection: 'row',
-    marginVertical: 20,
-    backgroundColor: 'transparent',
+  listViewContainer: {
+    height: 150,
   },
 });
+
+
+// AppRegistry.registerComponent('RCTWebRTCDemo', () => RCTWebRTCDemo);
