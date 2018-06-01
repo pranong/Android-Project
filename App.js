@@ -42,9 +42,9 @@ class mainScreen extends React.Component {
 class otherScreen extends React.Component {
   render() {
     return (
-      <View >
+      
         <Tel />
-      </View>
+    
     );
   }
 }
@@ -52,7 +52,7 @@ class otherScreen extends React.Component {
 class videoScreen extends React.Component {
   render() {
     return (
-        <Text>Video</Text>
+      <Test2 />
     );
   }
 }

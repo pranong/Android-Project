@@ -18,7 +18,9 @@ import {
 
 import io from 'socket.io-client';
 
-const socket = io.connect('https://react-native-webrtc.herokuapp.com', {transports: ['websocket']});
+
+const socket = io.connect('http://192.168.1.18:4443/', {transports: ['websocket']});
+// const socket = io.connect('https://react-native-webrtc.herokuapp.com', {transports: ['websocket']});
 
 import {
   RTCPeerConnection,
@@ -217,7 +219,7 @@ socket.on('connect', function(data) {
   getLocalStream(true, function(stream) {
     localStream = stream;
     container.setState({selfViewSrc: stream.toURL()});
-    container.setState({status: 'ready', info: 'Please select Doctor bla bla'});
+    container.setState({status: 'ready', info: 'Please Login'});
   });
 });
 
@@ -245,6 +247,69 @@ function getStats() {
   }
 }
 
+socket.on('message', function(message){
+  var data = message;
+  switch(data.type) {
+       case "login":
+              onLogin(data);
+              break;
+      case "answer":
+            console.log("getting called");
+              onAnswer(data);
+              break;
+      case "call_response":
+              onResponse(data);
+            break;
+      default:
+          break;
+  }
+})
+
+function onLogin(data){
+  if (data.success === false) {
+     _this.setState({ message: "oops...try a different username" })
+ } else {
+     //var loginContainer = document.getElementById('loginContainer');
+     //loginContainer.parentElement.removeChild(loginContainer);
+     var username = data.username;
+     var socketid = data.socketid;
+     console.log("Login Successfull");
+     console.log("logged in as :" + username + ", " + socketid);
+     console.log(data.userlist);
+    //  console.log(data.userlist);
+    //  let toArray = _.keys(data.userlist);
+    //  const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+    //  _this.setState({ currScreen: 'userList', dataSource: ds.cloneWithRows(toArray) })
+  }
+}
+
+function onAnswer(data){
+  if(busy == false){
+      busy = true
+      incallwith = data.callername
+      //var res = confirm(data.callername+" is calling you");
+      Alert.alert(
+        'Incoming Call',
+        data.callername+" is calling you",
+        [
+          {text: 'Cancel', onPress: () => callReject(data), style: 'cancel'},
+          {text: 'OK', onPress: () => callAccept(data) },
+        ],
+        { cancelable: false }
+      )
+
+       }else{
+           console.log("call busy");
+           //this.setState({ callResponse: "Call accepted by :"+ data.responsefrom })
+           socket.send({
+                  type: "call_busy",
+                  callername: data.callername,
+                  from: username
+           })
+
+       }
+}
+
 let container;
 
 export default class Test2 extends React.Component {
@@ -262,7 +327,21 @@ export default class Test2 extends React.Component {
       textRoomConnected: false,
       textRoomData: [],
       textRoomValue: '',
+      username: '',
+      call: 'PranongPunkrawk'
     };
+  }
+  
+  onPressLogin(){
+    let username = this.state.username
+    if(username == ""){
+      this.setState({ info: "Please enter Username" })
+    }else{
+        socket.send({
+              type: "login",
+              name: username
+                 })
+    }
   }
   componentDidMount() {
     container = this;
@@ -271,7 +350,12 @@ export default class Test2 extends React.Component {
     this.refs.roomID.blur();
     this.setState({status: 'connect', info: 'Connecting'});
     console.log("Pressed status:" + this.state.status + " Info: " + this.state.info)
-    join(this.state.roomID);
+    // socket.send({
+    //   type: "call_user",
+    //   name: this.state.username,
+    //   callername: this.state.call
+    // })
+    join(this.state.call);
   }
   _switchVideoType() {
     const isFront = !this.state.isFront;
@@ -293,42 +377,14 @@ export default class Test2 extends React.Component {
       }
     });
   }
-  receiveTextData(data) {
-    const textRoomData = this.state.textRoomData.slice();
-    textRoomData.push(data);
-    this.setState({textRoomData, textRoomValue: ''});
+  callUser(){
+    socket.send({
+     type: "call_user",
+     name: "my name",
+     callername: "json"
+   })
   }
-  _textRoomPress() {
-    if (!this.state.textRoomValue) {
-      return
-    }
-    const textRoomData = this.state.textRoomData.slice();
-    textRoomData.push({user: 'Me', message: this.state.textRoomValue});
-    for (const key in pcPeers) {
-      const pc = pcPeers[key];
-      pc.textDataChannel.send(this.state.textRoomValue);
-    }
-    this.setState({textRoomData, textRoomValue: ''});
-  }
-  _renderTextRoom() {
-    return (
-      <View style={styles.listViewContainer}>
-        <ListView
-          dataSource={this.ds.cloneWithRows(this.state.textRoomData)}
-          renderRow={rowData => <Text>{`${rowData.user}: ${rowData.message}`}</Text>}
-          />
-        <TextInput
-          style={{width: 200, height: 30, borderColor: 'gray', borderWidth: 1}}
-          onChangeText={value => this.setState({textRoomValue: value})}
-          value={this.state.textRoomValue}
-        />
-        <TouchableHighlight
-          onPress={this._textRoomPress}>
-          <Text>Send</Text>
-        </TouchableHighlight>
-      </View>
-    );
-  }
+
   render() {
     return (
       <View style={styles.container}>
@@ -339,29 +395,45 @@ export default class Test2 extends React.Component {
         <View style={{flexDirection: 'row'}}>
         </View>
         { this.state.status == 'ready' ?
-          (<View>
-            <Picker
-              selectedValue={this.state.language}
-              style={{ height: 50, width: 200 }}
-              onValueChange={(itemValue, itemIndex) => this.setState({language: itemValue})}>
-              <Picker.Item label="Doctor A" value="Doctor A" />
-              <Picker.Item label="Doctor B" value="Doctor B" />
-              <Picker.Item label="Doctor C" value="Doctor C" />
-              <Picker.Item label="Doctor D" value="Doctor D" />
-            </Picker>
-            <TextInput
-              ref='roomID'
+          (
+            <View>
+              <Text>Input Username</Text>
+              <TextInput
+              ref='user'
               autoCorrect={false}
               style={{width: 200, height: 40, borderColor: 'gray', borderWidth: 1}}
-              onChangeText={(text) => this.setState({roomID: text})}
-              value={this.state.roomID}
-            />
-            <TouchableHighlight
-            style={{borderWidth: 1, borderColor: 'black'}}
-              onPress={() => join(this.state.roomID)}>
-              <Text>Enter room</Text>
-            </TouchableHighlight>
-          </View>) : null
+              onChangeText={(text) => this.setState({username: text})}
+              value={this.state.username}/>
+                <TouchableHighlight
+                  style={{borderWidth: 1, borderColor: 'black'}}
+                  onPress={() => this.onPressLogin() }>
+                    <Text>Login</Text>
+                  </TouchableHighlight>
+                <View>
+                  <Picker
+                    selectedValue={this.state.call}
+                    style={{ height: 50, width: 250 }}
+                    onValueChange={(itemValue, itemIndex) => this.setState({call: itemValue})}>
+                    <Picker.Item label="Dr. Nuttapat Panong" value="PranongPunkrawk" />
+                    <Picker.Item label="Doctor B" value="abc" />
+                    <Picker.Item label="Doctor C" value="Doctor C" />
+                    <Picker.Item label="Doctor D" value="Doctor D" />
+                  </Picker>
+                  <TextInput
+                    ref='roomID'
+                    autoCorrect={false}
+                    style={{width: 200, height: 40, borderColor: 'gray', borderWidth: 1}}
+                    onChangeText={(text) => this.setState({roomID: text})}
+                    value={this.state.roomID}
+                  />
+                  <TouchableHighlight
+                    style={{borderWidth: 1, borderColor: 'black'}}
+                    onPress={this._press.bind(this)}>
+                    <Text>Enter room</Text>
+                  </TouchableHighlight>
+                </View>
+            </View> 
+          ) : null
         }
         <TouchableOpacity onPress={this._switchVideoType.bind(this)}>
             <Image 
@@ -369,13 +441,26 @@ export default class Test2 extends React.Component {
               source={{uri: 'https://cdn.icon-icons.com/icons2/510/PNG/512/ios7-reverse-camera_icon-icons.com_50174.png'}} 
             />
         </TouchableOpacity>
-        <TouchableOpacity onPress={this._switchVideoType.bind(this)}>
+        {/* <TouchableOpacity onPress={this._switchVideoType.bind(this)}>
             <Image 
               style={{width: 500, height: 500, position: "absolute", justifyContent: 'center', alignItems: 'center', opacity: .5}}
               source={{uri: 'https://cdn.icon-icons.com/icons2/510/PNG/512/ios7-reverse-camera_icon-icons.com_50174.png'}} 
             />
-        </TouchableOpacity>
-        <RTCView streamURL={this.state.selfViewSrc} style={styles.selfView}/>
+        </TouchableOpacity> */}
+        
+            <View
+              style={styles.optionsContainer}>
+              <TouchableOpacity
+                style={styles.optionButton}
+                // onPress={this._onEndButtonPress}
+                >
+                <Image 
+                  style={{width: 65, height: 65, opacity: 1}}
+                  source={{uri: 'https://cdn2.iconfinder.com/data/icons/weby-flat-vol-2/512/weby-flat_call_end-call_drop-128.png'}} 
+                />
+              </TouchableOpacity>
+            </View>
+            <RTCView streamURL={this.state.selfViewSrc} style={styles.selfView}/>
         {
           mapHash(this.state.remoteList, function(remote, index) {
             return <RTCView key={index} streamURL={remote} style={styles.remoteView}/>
@@ -395,8 +480,8 @@ const styles = StyleSheet.create({
     right: -50
   },
   remoteView: {
-    width: Dimensions.get('window').width,
-    height: 150,
+    // width: Dimensions.get('window').width,
+    height: 300,
   },
   container: {
     ...StyleSheet.absoluteFillObject,
@@ -412,6 +497,26 @@ const styles = StyleSheet.create({
   listViewContainer: {
     height: 150,
   },
+  optionsContainer: {
+    position: "absolute",
+    left: 0,
+    bottom: 0,
+    right: 0,
+    height: 100,
+    flexDirection: "row",
+    justifyContent: 'center',
+    alignItems: "center"
+  },
+  optionButton: {
+    width: 60,
+    height: 60,
+    marginLeft: 10,
+    marginRight: 10,
+    borderRadius: 100 / 2,
+    backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: "center"
+  }
 });
 
 
