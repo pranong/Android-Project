@@ -291,7 +291,13 @@ export default class Maps extends React.Component {
       showLocation({
         latitude: this.state.selectLat,
         longitude: this.state.selectLng,  // optional
-        app: 'google-maps'  // optionally specify specific app to use
+        sourceLatitude: this.state.lastLat,  // optionally specify starting location for directions
+        sourceLongitude: this.state.lastLong,  // not optional if sourceLatitude is specified
+        title: 'AED',  // optional
+        dialogTitle: 'Open in Maps', // optional (default: 'Open in Maps')
+        dialogMessage: 'What app would you like to use?', // optional (default: 'What app would you like to use?')
+        cancelText: 'Cancel', // optional (default: 'Cancel')
+        // app: 'uber'  // optionally specify specific app to use
     })
   }
 }

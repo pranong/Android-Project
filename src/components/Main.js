@@ -24,7 +24,8 @@ import firebase from '../../firebase'
 var userRef = firebase.database().ref("User/");
 var logRef = firebase.database().ref("log/");
 // const socket = io.connect('http://192.168.1.18:4443/', {transports: ['websocket']});
-const socket = io.connect('https://react-native-webrtc.herokuapp.com', {transports: ['websocket']});
+// const socket = io.connect('https://react-native-webrtc.herokuapp.com', {transports: ['websocket']});
+const socket = io.connect('https://callsocketserver.herokuapp.com/', {transports: ['websocket']});
 
 import {
   RTCPeerConnection,
@@ -83,6 +84,12 @@ function join(roomID) {
       const socketId = socketIds[i];
       createPC(socketId, true);
     }
+  });
+}
+
+function disconnect(roomID) {
+  socket.emit('leave', roomID, function(socketIds){
+    console.log('leave', socketIds);
   });
 }
 
@@ -373,6 +380,13 @@ export default class Test2 extends React.Component {
       })
     }
   }
+
+  onPressLeave(){
+    InCallManager.stopRingback();
+    this.setState({status: 'ready', remoteList: {}});
+    // disconnect(this.state.call)
+  }
+
   componentDidMount() {
     container = this;
     TimerMixin.setInterval( () => { 
@@ -380,7 +394,7 @@ export default class Test2 extends React.Component {
         (position) => {
           this.setState({
             lastLat: position.coords.latitude,
-            lastLong: position.coords.longitude,
+            lastLng: position.coords.longitude,
             error: null,
           });
         },
@@ -392,7 +406,7 @@ export default class Test2 extends React.Component {
       (position) => {
         this.setState({
           lastLat: position.coords.latitude,
-          lastLong: position.coords.longitude,
+          lastLng: position.coords.longitude,
           error: null,
         });
       },
@@ -406,7 +420,7 @@ export default class Test2 extends React.Component {
   }
 
   sendLog() {
-    // if(this.state.lastLat == 0 || this.state.lastLong == 0){
+    // if(this.state.lastLat == 0 || this.state.lastLng == 0){
     //   Alert.alert('Generating the location. Please Try again later.');
     // }else{
       var date = new Date().getDate();
@@ -422,7 +436,7 @@ export default class Test2 extends React.Component {
 
       // var name = snapshot.name();
       
-      var ref = logRef.push({date: fullDate, time: fullTime, lat: this.state.lastLat, lng: this.state.lastLng, caller: this.state.myname, callto: this.state.call});
+      var ref = logRef.push({date: fullDate, time: fullTime, lat: this.state.lastLat, lng: this.state.lastLng, caller: this.state.myname, callto: this.state.call, month: month, year: year});
       var n = ref.toString().lastIndexOf("log");
       var num = (n + 4);
       var uid = ref.toString().substring(num);
@@ -461,7 +475,11 @@ export default class Test2 extends React.Component {
           const pc = pcPeers[id];
           pc && pc.removeStream(localStream);
         }
+        localStream.getTracks().forEach((t) => {
+          localStream.removeTrack(t);
+        });
         localStream.release();
+        // localStream.release();
       }
       localStream = stream;
       container.setState({selfViewSrc: stream.toURL()});
@@ -563,7 +581,7 @@ export default class Test2 extends React.Component {
                   </TouchableOpacity>
                   </View>
                   <Text>Latitude: {this.state.lastLat}</Text>
-        <Text>Longitude: {this.state.lastLng}</Text>
+                  <Text>Longitude: {this.state.lastLng}</Text>
                 </View>
             </View> 
           ) : null
@@ -590,7 +608,7 @@ export default class Test2 extends React.Component {
               style={styles.optionsContainer}>
               <TouchableOpacity
                 style={styles.optionButton}
-                // onPress={() => leave(this.state.mysocketid)}
+                onPress={this.onPressLeave.bind(this)}
                 >
                 <Image 
                   style={{width: 65, height: 65, opacity: 1}}
