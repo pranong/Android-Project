@@ -14,13 +14,17 @@ import {
   Image,
   Picker,
   Dimensions,
+  Alert,
 } from 'react-native';
-
+var TimerMixin = require('react-timer-mixin');
+import ModalSelector from 'react-native-modal-selector';
+import InCallManager from 'react-native-incall-manager';
 import io from 'socket.io-client';
-
-
-const socket = io.connect('http://192.168.1.18:4443/', {transports: ['websocket']});
-// const socket = io.connect('https://react-native-webrtc.herokuapp.com', {transports: ['websocket']});
+import firebase from '../../firebase'
+var userRef = firebase.database().ref("User/");
+var logRef = firebase.database().ref("log/");
+// const socket = io.connect('http://192.168.1.18:4443/', {transports: ['websocket']});
+const socket = io.connect('https://react-native-webrtc.herokuapp.com', {transports: ['websocket']});
 
 import {
   RTCPeerConnection,
@@ -128,7 +132,10 @@ function createPC(socketId, isOffer) {
   pc.onaddstream = function (event) {
     console.log('onaddstream', event.stream);
     container.setState({info: 'One peer join!'});
-
+    // InCallManager.stopRingtone();
+    // InCallManager.start();
+    InCallManager.stopRingback();
+    // InCallManager.stop();
     const remoteList = container.state.remoteList;
     remoteList[socketId] = event.stream.toURL();
     container.setState({ remoteList: remoteList });
@@ -219,7 +226,7 @@ socket.on('connect', function(data) {
   getLocalStream(true, function(stream) {
     localStream = stream;
     container.setState({selfViewSrc: stream.toURL()});
-    container.setState({status: 'ready', info: 'Please Login'});
+    container.setState({status: 'ready', info: 'Welcome'});
   });
 });
 
@@ -273,8 +280,9 @@ function onLogin(data){
      //loginContainer.parentElement.removeChild(loginContainer);
      var username = data.username;
      var socketid = data.socketid;
+     container.setState({mysocketid: socketid});
      console.log("Login Successfull");
-     console.log("logged in as :" + username + ", " + socketid);
+     console.log("logged in as :" + username + ", " + socketid + ", " + container.state.mysocketid);
      console.log(data.userlist);
     //  console.log(data.userlist);
     //  let toArray = _.keys(data.userlist);
@@ -327,8 +335,15 @@ export default class Test2 extends React.Component {
       textRoomConnected: false,
       textRoomData: [],
       textRoomValue: '',
-      username: '',
-      call: 'PranongPunkrawk'
+      username: 'nutpat2539',
+      myname: '',
+      call: 'PranongPunkrawk',
+      loginStatus: 'Failed',
+      myuid: '',
+      mysocketid: '',
+      lastLat: '0',
+      lastLng: '0',
+      loguid: ''
     };
   }
   
@@ -337,25 +352,105 @@ export default class Test2 extends React.Component {
     if(username == ""){
       this.setState({ info: "Please enter Username" })
     }else{
-        socket.send({
+    let username = this.state.username
+    userRef
+      .orderByChild("user")
+      .equalTo(username)
+      .once("value")
+      .then(snapshot => {
+          if (snapshot.val()) {
+            console.log(snapshot.val())
+            console.log(Object.entries(snapshot.val())[0][0])
+            console.log(Object.entries(snapshot.val())[0][1].name)
+            this.setState({info: 'Login Successful ' + Object.entries(snapshot.val())[0][0], loginStatus: 'Success',myname: Object.entries(snapshot.val())[0][1].name, myuid: Object.entries(snapshot.val())[0][0]});
+            socket.send({
               type: "login",
               name: username
                  })
+          }else{
+            this.setState({info: 'Login Unsuccessful'});
+          }
+      })
     }
   }
   componentDidMount() {
     container = this;
+    TimerMixin.setInterval( () => { 
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.setState({
+            lastLat: position.coords.latitude,
+            lastLong: position.coords.longitude,
+            error: null,
+          });
+        },
+        (error) => this.setState({ error: error.message }),
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
+      );
+   }, 3000);
+    this.watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        this.setState({
+          lastLat: position.coords.latitude,
+          lastLong: position.coords.longitude,
+          error: null,
+        });
+      },
+      (error) => this.setState({ error: error.message }),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000, distanceFilter: 10 },
+    );
   }
+
+  componentWillUnmount() {
+    navigator.geolocation.clearWatch(this.watchId);
+  }
+
+  sendLog() {
+    // if(this.state.lastLat == 0 || this.state.lastLong == 0){
+    //   Alert.alert('Generating the location. Please Try again later.');
+    // }else{
+      var date = new Date().getDate();
+      var month = new Date().getMonth() + 1;
+      var year = new Date().getFullYear();
+
+      var hour = new Date().getHours(); 
+      var min = new Date().getMinutes();
+      var sec = new Date().getSeconds();
+
+      var fullDate = date + '/' + month + '/' + year;
+      var fullTime = hour + ':' + min + ':' + sec;
+
+      // var name = snapshot.name();
+      
+      var ref = logRef.push({date: fullDate, time: fullTime, lat: this.state.lastLat, lng: this.state.lastLng, caller: this.state.myname, callto: this.state.call});
+      var n = ref.toString().lastIndexOf("log");
+      var num = (n + 4);
+      var uid = ref.toString().substring(num);
+      // var uid = '123698745'
+      this.setState({loguid: uid});
+      console.log('Inref : ' + uid);
+      // Alert.alert(uid + ' ' + fullDate + '.....' + fullTime + '.....' + this.state.lastLat + ', ' + this.state.lastLong);
+    // }
+  }
+
   _press(event) {
-    this.refs.roomID.blur();
-    this.setState({status: 'connect', info: 'Connecting'});
-    console.log("Pressed status:" + this.state.status + " Info: " + this.state.info)
-    // socket.send({
-    //   type: "call_user",
-    //   name: this.state.username,
-    //   callername: this.state.call
-    // })
-    join(this.state.call);
+    // this.refs.roomID.blur();
+    if (this.state.loginStatus == 'Success') {
+      this.setState({status: 'connect', info: 'Connecting'});
+      console.log("Pressed status:" + this.state.status + " Info: " + this.state.info)
+      // socket.send({
+      //   type: "call_user",
+      //   name: this.state.username,
+      //   callername: this.state.call
+      // })
+    
+      this.sendLog();
+
+      join(this.state.call);
+      InCallManager.start({media: 'video', ringback: '_BUNDLE_'});
+    }else{
+      this.setState({ info: "Please Login" })
+    }
   }
   _switchVideoType() {
     const isFront = !this.state.isFront;
@@ -386,6 +481,25 @@ export default class Test2 extends React.Component {
   }
 
   render() {
+    let index = 0;
+        const data = [
+            { key: index++, section: true, label: 'Fruits' },
+            { key: index++, label: 'Red Apples' },
+            { key: index++, label: 'Cherries' },
+            { key: index++, label: 'Cranberries' },
+            { key: index++, label: 'Pink Grapefruit' },
+            { key: index++, label: 'Raspberries' },
+            { key: index++, section: true, label: 'Vegetables' },
+            { key: index++, label: 'Beets' },
+            { key: index++, label: 'Red Peppers' },
+            { key: index++, label: 'Radishes' },
+            { key: index++, label: 'Radicchio' },
+            { key: index++, label: 'Red Onions' },
+            { key: index++, label: 'Red Potatoes' },
+            { key: index++, label: 'Rhubarb' },
+            { key: index++, label: 'Tomatoes' }
+        ];
+
     return (
       <View style={styles.container}>
         <Text style={styles.welcome}>
@@ -401,16 +515,18 @@ export default class Test2 extends React.Component {
               <TextInput
               ref='user'
               autoCorrect={false}
-              style={{width: 200, height: 40, borderColor: 'gray', borderWidth: 1}}
+              style={{width: 200, height: 35, borderColor: 'gray', borderWidth: 1}}
               onChangeText={(text) => this.setState({username: text})}
               value={this.state.username}/>
+              <View style={styles.buttonContainer}>
                 <TouchableHighlight
-                  style={{borderWidth: 1, borderColor: 'black'}}
+                  style={[styles.bubble, styles.button]}
                   onPress={() => this.onPressLogin() }>
-                    <Text>Login</Text>
-                  </TouchableHighlight>
+                  <Text>Login</Text>
+                </TouchableHighlight>
+                </View>
                 <View>
-                  <Picker
+                  {/* <Picker
                     selectedValue={this.state.call}
                     style={{ height: 50, width: 250 }}
                     onValueChange={(itemValue, itemIndex) => this.setState({call: itemValue})}>
@@ -418,19 +534,36 @@ export default class Test2 extends React.Component {
                     <Picker.Item label="Doctor B" value="abc" />
                     <Picker.Item label="Doctor C" value="Doctor C" />
                     <Picker.Item label="Doctor D" value="Doctor D" />
-                  </Picker>
-                  <TextInput
+                  </Picker> */}
+                  <ModalSelector
+                    data={data}
+                    initValue="Select something yummy!"
+                    onChange={(option)=>{ this.setState({call:option.label})}}>
+                    
+                    <TextInput
+                        style={{borderWidth:1, borderColor:'#ccc', padding:10, height:35,  marginTop:5}}
+                        editable={false}
+                        placeholder="Select something yummy!"
+                        value={this.state.call} />
+                        
+                  </ModalSelector>
+                  {/* <TextInput
                     ref='roomID'
                     autoCorrect={false}
                     style={{width: 200, height: 40, borderColor: 'gray', borderWidth: 1}}
                     onChangeText={(text) => this.setState({roomID: text})}
                     value={this.state.roomID}
-                  />
-                  <TouchableHighlight
-                    style={{borderWidth: 1, borderColor: 'black'}}
+                  /> */}
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                    style={[styles.bubble, styles.button]}
                     onPress={this._press.bind(this)}>
+                    
                     <Text>Enter room</Text>
-                  </TouchableHighlight>
+                  </TouchableOpacity>
+                  </View>
+                  <Text>Latitude: {this.state.lastLat}</Text>
+        <Text>Longitude: {this.state.lastLng}</Text>
                 </View>
             </View> 
           ) : null
@@ -441,6 +574,11 @@ export default class Test2 extends React.Component {
               source={{uri: 'https://cdn.icon-icons.com/icons2/510/PNG/512/ios7-reverse-camera_icon-icons.com_50174.png'}} 
             />
         </TouchableOpacity>
+        {
+        mapHash(this.state.remoteList, function(remote, index) {
+            return <RTCView key={index} streamURL={remote} style={styles.remoteView}/>
+          })
+        }
         {/* <TouchableOpacity onPress={this._switchVideoType.bind(this)}>
             <Image 
               style={{width: 500, height: 500, position: "absolute", justifyContent: 'center', alignItems: 'center', opacity: .5}}
@@ -452,7 +590,7 @@ export default class Test2 extends React.Component {
               style={styles.optionsContainer}>
               <TouchableOpacity
                 style={styles.optionButton}
-                // onPress={this._onEndButtonPress}
+                // onPress={() => leave(this.state.mysocketid)}
                 >
                 <Image 
                   style={{width: 65, height: 65, opacity: 1}}
@@ -461,11 +599,6 @@ export default class Test2 extends React.Component {
               </TouchableOpacity>
             </View>
             <RTCView streamURL={this.state.selfViewSrc} style={styles.selfView}/>
-        {
-          mapHash(this.state.remoteList, function(remote, index) {
-            return <RTCView key={index} streamURL={remote} style={styles.remoteView}/>
-          })
-        }
       </View>
     );
   }
@@ -481,7 +614,7 @@ const styles = StyleSheet.create({
   },
   remoteView: {
     // width: Dimensions.get('window').width,
-    height: 300,
+    height: 200,
   },
   container: {
     ...StyleSheet.absoluteFillObject,
@@ -516,7 +649,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'red',
     justifyContent: 'center',
     alignItems: "center"
-  }
+  },
+  bubble: {
+    flex: 1,
+    backgroundColor: 'rgba(180,180,180,0.7)',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 20,
+  },
+  button: {
+    width: 40,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginVertical: 20,
+    backgroundColor: 'transparent',
+  },
 });
 
 

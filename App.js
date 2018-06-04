@@ -50,6 +50,9 @@ class otherScreen extends React.Component {
 }
 
 class videoScreen extends React.Component {
+  static navigationOptions = {
+    title: 'Video Calling'
+  };
   render() {
     return (
       <Test2 />
@@ -58,6 +61,9 @@ class videoScreen extends React.Component {
 }
 
 class testScreen extends React.Component {
+  static navigationOptions = {
+    title: 'First Aid'
+  };
   render() {
     return (
       <Test1 />
@@ -76,7 +82,7 @@ export default TabNavigator(
     AED_Navigation: { screen: aedScreen },
     Video_Calling: { screen: videoScreen },
     Hotline: { screen: otherScreen },
-    Test: { screen: testScreen },
+    First_Aid: { screen: testScreen },
   },
   {
     navigationOptions: ({ navigation }) => ({
@@ -89,8 +95,8 @@ export default TabNavigator(
           iconName = `ios-warning${focused ? '' : '-outline'}`;
         } else if (routeName === 'Hotline') {
           iconName = `ios-information-circle${focused ? '' : '-outline'}`;
-        } else if (routeName === 'Test') {
-        iconName = `ios-information-circle${focused ? '' : '-outline'}`;
+        } else if (routeName === 'First_Aid') {
+        iconName = `ios-bulb${focused ? '' : '-outline'}`;
         } else if (routeName === 'Video_Calling') {
           iconName = `ios-videocam${focused ? '' : '-outline'}`;
           }

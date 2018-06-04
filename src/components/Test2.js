@@ -1,6 +1,6 @@
 import Test2 from './Test2'
 import React, { Component } from "react";
-import { AppRegistry, View, Text, FlatList, ActivityIndicator, ListView, ScrollView, Alert, TouchableOpacity, TouchableHighlight, Image, StyleSheet, Button } from "react-native";
+import { AppRegistry, TextInput, View, Text, FlatList, ActivityIndicator, ListView, ScrollView, Alert, TouchableOpacity, TouchableHighlight, Image, StyleSheet, Button } from "react-native";
 import { List, ListItem, SearchBar } from "react-native-elements";
 import NavigationBar from 'react-native-navbar';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -9,7 +9,7 @@ import  Camera  from 'react-native-camera';
 import { TabNavigator, TabBarBottom, StackNavigator } from 'react-navigation';
 import RNFetchBlob from 'react-native-fetch-blob'
 import ImagePicker from 'react-native-image-crop-picker'
-
+import ModalSelector from 'react-native-modal-selector';
 import firebase from '../../firebase'
 var eventRef = firebase.database().ref("Event/");
 
@@ -128,15 +128,15 @@ class MainScreen extends React.Component {
           style={styles.buttonContainer}>
             <Text style={styles.button}>
               <Ionicons
-              name='ios-call'
+              name='ios-paper-plane'
               size={35}
               color='white'
             />
-           &nbsp;&nbsp;&nbsp;Call 1669</Text>
+           &nbsp;&nbsp;&nbsp;แจ้งเหตุฉุกเฉิน</Text>
           </TouchableOpacity>
           <Text>Latitude: {this.state.lastLat}</Text>
         <Text>Longitude: {this.state.lastLong}</Text>
-        {this.state.error ? <Text>Error: {this.state.error}</Text> : null}
+        {/* {this.state.error ? <Text>Error: {this.state.error}</Text> : null} */}
         </View>
       </View>
     );
@@ -294,12 +294,136 @@ class thirdScreen extends React.Component {
      return (
        <View style={styles.container}>
          { dps }
-         <Button
+         <View style={styles.buttonContainer2}>
+              <TouchableOpacity
+                onPress={() => this.props.navigation.navigate('Fourth', this.props.navigation.state.params)}
+                style={[styles.bubble, styles.button2]}
+              >
+                <Text>Next</Text>
+              </TouchableOpacity>
+              <Button
            onPress={ () => this.openPicker() }
            title={ "openPicker" }/>
+            </View>
        </View>
      );
    }
+}
+
+class fourthScreen extends React.Component {
+  static navigationOptions = {
+    title: 'Details'
+  };
+  constructor(props) {
+    super(props)
+    this.state = {
+      name: 'null',
+      surname: 'null',
+      age: 'null',
+      location: 'null',
+      detail: 'null',
+      type: 'null',
+     }
+   }
+
+  sendDetail(){
+    const uid = this.props.navigation.state.params
+    eventRef.child(uid).update({
+      name: this.state.name,
+      surname: this.state.surname,
+      age: this.state.age,
+      location: this.state.location,
+      detail: this.state.detail,
+      type: this.state.type,
+     });
+    this.props.navigation.navigate('Thx')
+  }
+
+  render() {
+    let index = 0;
+        const data = [
+            { key: index++, section: true, label: 'อุบัติเหตุ' },
+            { key: index++, label: 'อุบัติเหตุจากไฟฟ้า' },
+            { key: index++, label: 'อุบัติเหตุจากที่สูง' },
+            { key: index++, label: 'อุบัติเหตุจากสารเคมี' },
+            { key: index++, label: 'อุบัติเหตุจากยานพาหนะ' },
+            { key: index++, label: 'อุบัติเหตุจากเครื่องจักร' },
+            { key: index++, section: true, label: 'อุบัติภัย' },
+            { key: index++, label: 'อุบัติภัยจากอัคคีภัย' },
+            { key: index++, label: 'อุบัติภัยในการจราจรทางบก' },
+            { key: index++, label: 'อุบัติภัยในการจราจรทางน้ำ' },
+            { key: index++, label: 'อื่นๆ' },
+        ];
+
+    return (
+      <View style={styles.containers}>
+        <View style={styles.inputcontainer}>
+          <TextInput placeholder="ชื่อ (ถ้ามี)" 
+            style={styles.input} 
+            returnKeyType="next" 
+            onSubmitEditing={() => this.firstInput.focus()}
+            onChangeText={(text) => this.setState({name: text})}/>
+          <TextInput placeholder="นามสกุล (ถ้ามี)" 
+            style={styles.input} 
+            returnKeyType="next" 
+            onSubmitEditing={() => this.secondInput.focus()} 
+            ref={(input) => this.firstInput = input}
+            onChangeText={(text) => this.setState({surname: text})}/>
+          <TextInput placeholder="อายุโดยประมาณ" 
+            style={styles.input} 
+            returnKeyType="next" 
+            onSubmitEditing={() => this.thirdInput.focus()} 
+            ref={(input) => this.secondInput = input}
+            onChangeText={(text) => this.setState({age: text})}/>
+          <TextInput placeholder="สถานที่เกิดเหตุ (ถ้ามี)" 
+            style={styles.input} returnKeyType="next" 
+            onSubmitEditing={() => this.fourthInput.focus()} 
+            ref={(input) => this.thirdInput = input}
+            onChangeText={(text) => this.setState({location: text})}/>
+          <TextInput placeholder="รายละเอียดอื่นๆ (ถ้ามี)" 
+            style={styles.input} returnKeyType="next" 
+            ref={(input) => this.fourthInput = input}
+            onChangeText={(text) => this.setState({detail: text})}/>
+          <ModalSelector
+            style={styles.input}
+            data={data}
+            initValue="Select something yummy!"
+            onChange={(option)=>{ this.setState({type:option.label})}}>    
+            <TextInput
+              // style={{borderWidth:1, borderColor:'#ccc', padding:10, height:35,  marginTop:5}}
+              editable={false}
+              placeholder="โปรดเลือกอุบัติเหตุเบื้องต้น"
+              value={this.state.type} />         
+          </ModalSelector>
+          <TouchableOpacity style={styles.buttonContainer} onPress={() => this.sendDetail()}>
+          <Text style={styles.buttonText}>Submit</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+}
+
+class thankScreen extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      name: 'null',
+      surname: 'null',
+      age: 'null',
+      location: 'null',
+      detail: 'null',
+      type: 'null',
+     }
+   }
+
+  render() {
+    return (
+      <View style={styles.container}>
+        <Text>Thank you !!</Text>
+      </View>
+    );
+  }
 }
 
 
@@ -308,6 +432,8 @@ export default StackNavigator(
     Main: { screen: MainScreen },
     Second: { screen: secondScreen },
     Third: { screen: thirdScreen },
+    Fourth: { screen: fourthScreen },
+    Thx: { screen: thankScreen },
   })
   
 
@@ -320,6 +446,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5FCFF',
     width: '100%'
   },
+  containers: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#F5FCFF',
+    width: '100%'
+  },
+  input: {
+    height: 40,
+    backgroundColor: 'rgba(180,180,180,0.2)',
+    marginBottom: 10,
+    color: '#000000',
+    paddingHorizontal: 10,
+    borderRadius: 10,
+  },
+  inputcontainer: {
+    padding: 20,
+  },
+  buttonContainer: {
+    // fontSize: 20,
+    // textAlign: 'center',
+    // margin: 10,
+    // color: 'white',
+    backgroundColor: '#2980b9',
+    paddingVertical: 15,
+    borderRadius: 10,
+  },
+  buttonText: {
+    textAlign: 'center',
+    color: '#FFFFFF',
+    fontWeight: '700'
+  },
   button: {
     fontSize: 20,
     textAlign: 'center',
@@ -327,14 +484,16 @@ const styles = StyleSheet.create({
     // margin: 10,
     color: 'white',
     paddingVertical: 10,
+    paddingLeft: 10,
+    paddingRight: 10,
   },
   buttonContainer: {
     // fontSize: 20,
     // textAlign: 'center',
     // margin: 10,
     // color: 'white',
-    backgroundColor: 'skyblue',
-    // paddingVertical: 5,
+    backgroundColor: '#2980b9',
+    paddingVertical: 15,
     borderRadius: 10,
   },
   instructions: {

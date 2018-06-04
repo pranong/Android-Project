@@ -97,7 +97,7 @@ export default class Tel extends React.Component {
         title={titleConfig}
         />
         <ScrollView>
-        <List containerStyle={{marginTop: -5, marginBottom: 25}}>
+        <List containerStyle={{marginTop: -5, marginBottom: 30}}>
           {
             list.map((l, i) => (
               <ListItem

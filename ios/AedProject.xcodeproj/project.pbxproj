@@ -53,6 +53,7 @@
 		885453B4A94242DB9893B1A7 /* Octicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 81FBD5EC99C745CAA39CF06A /* Octicons.ttf */; };
 		CC0588E289D44314AF41061D /* SimpleLineIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C7C72D0A54074AABA47457A7 /* SimpleLineIcons.ttf */; };
 		046BD106C8444668A1D6A5D5 /* Zocial.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3523ED00F6B147DABA05FAB1 /* Zocial.ttf */; };
+		25841ADFE8A94167BB58D0BB /* libRNInCallManager.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5240DCB60B8E4EECA937BC74 /* libRNInCallManager.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -325,6 +326,8 @@
 		81FBD5EC99C745CAA39CF06A /* Octicons.ttf */ = {isa = PBXFileReference; name = "Octicons.ttf"; path = "../node_modules/react-native-vector-icons/Fonts/Octicons.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		C7C72D0A54074AABA47457A7 /* SimpleLineIcons.ttf */ = {isa = PBXFileReference; name = "SimpleLineIcons.ttf"; path = "../node_modules/react-native-vector-icons/Fonts/SimpleLineIcons.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		3523ED00F6B147DABA05FAB1 /* Zocial.ttf */ = {isa = PBXFileReference; name = "Zocial.ttf"; path = "../node_modules/react-native-vector-icons/Fonts/Zocial.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		732254959FE04355AD62F21B /* RNInCallManager.xcodeproj */ = {isa = PBXFileReference; name = "RNInCallManager.xcodeproj"; path = "../node_modules/react-native-incall-manager/ios/RNInCallManager.xcodeproj"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = wrapper.pb-project; explicitFileType = undefined; includeInIndex = 0; };
+		5240DCB60B8E4EECA937BC74 /* libRNInCallManager.a */ = {isa = PBXFileReference; name = "libRNInCallManager.a"; path = "libRNInCallManager.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -359,6 +362,7 @@
 				0A89A964D799487481EFBB1A /* libRNFetchBlob.a in Frameworks */,
 				AACD9657F18A44628CC5C42D /* libAirMaps.a in Frameworks */,
 				7A8D4EC0E1904EE8A4A4ECAF /* libRNVectorIcons.a in Frameworks */,
+				25841ADFE8A94167BB58D0BB /* libRNInCallManager.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -542,6 +546,7 @@
 				765A8F3151434B2387BC360F /* RNFetchBlob.xcodeproj */,
 				3B909A9451204DCFBA72A1DA /* AirMaps.xcodeproj */,
 				E2A750B85EBB41E69048FB46 /* RNVectorIcons.xcodeproj */,
+				732254959FE04355AD62F21B /* RNInCallManager.xcodeproj */,
 			);
 			name = Libraries;
 			sourceTree = "<group>";
@@ -1149,6 +1154,7 @@
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1158,6 +1164,7 @@
 					"$(SRCROOT)\..\node_modules\react-native-fetch-blob\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-maps\lib\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-vector-icons\RNVectorIconsManager",
+					"$(SRCROOT)\..\node_modules\react-native-incall-manager\ios\RNInCallManager",
 				);
 			};
 			name = Debug;
@@ -1184,6 +1191,7 @@
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1193,6 +1201,7 @@
 					"$(SRCROOT)\..\node_modules\react-native-fetch-blob\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-maps\lib\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-vector-icons\RNVectorIconsManager",
+					"$(SRCROOT)\..\node_modules\react-native-incall-manager\ios\RNInCallManager",
 				);
 			};
 			name = Release;
@@ -1220,6 +1229,7 @@
 					"$(SRCROOT)\..\node_modules\react-native-fetch-blob\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-maps\lib\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-vector-icons\RNVectorIconsManager",
+					"$(SRCROOT)\..\node_modules\react-native-incall-manager\ios\RNInCallManager",
 				);
 			};
 			name = Debug;
@@ -1246,6 +1256,7 @@
 					"$(SRCROOT)\..\node_modules\react-native-fetch-blob\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-maps\lib\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-vector-icons\RNVectorIconsManager",
+					"$(SRCROOT)\..\node_modules\react-native-incall-manager\ios\RNInCallManager",
 				);
 			};
 			name = Release;
@@ -1281,6 +1292,7 @@
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1290,6 +1302,7 @@
 					"$(SRCROOT)\..\node_modules\react-native-fetch-blob\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-maps\lib\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-vector-icons\RNVectorIconsManager",
+					"$(SRCROOT)\..\node_modules\react-native-incall-manager\ios\RNInCallManager",
 				);
 			};
 			name = Debug;
@@ -1325,6 +1338,7 @@
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1334,6 +1348,7 @@
 					"$(SRCROOT)\..\node_modules\react-native-fetch-blob\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-maps\lib\ios/**",
 					"$(SRCROOT)\..\node_modules\react-native-vector-icons\RNVectorIconsManager",
+					"$(SRCROOT)\..\node_modules\react-native-incall-manager\ios\RNInCallManager",
 				);
 			};
 			name = Release;
@@ -1364,6 +1379,7 @@
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 			};
 			name = Debug;
@@ -1388,6 +1404,7 @@
 				TVOS_DEPLOYMENT_TARGET = 10.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
