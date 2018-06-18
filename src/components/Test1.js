@@ -10,6 +10,7 @@ import { TabNavigator, TabBarBottom, StackNavigator } from 'react-navigation';
 import RNFetchBlob from 'react-native-fetch-blob'
 import ImagePicker from 'react-native-image-crop-picker'
 import ModalSelector from 'react-native-modal-selector';
+import YouTube from 'react-native-youtube'
 import firebase from '../../firebase'
 var eventRef = firebase.database().ref("Event/");
 
@@ -93,6 +94,19 @@ class MainScreen extends React.Component {
 }
 
 class secondScreen extends React.Component {
+  state = {
+    isReady: false,
+    status: null,
+    quality: null,
+    error: null,
+    isPlaying: true,
+    isLooping: true,
+    duration: 0,
+    currentTime: 0,
+    fullscreen: false,
+    containerMounted: false,
+    containerWidth: null,
+  };
   static navigationOptions = {
     title: 'แขนหรือขาหัก'
   };
@@ -191,6 +205,35 @@ class secondScreen extends React.Component {
             <View style={ styles.bulletText }>
               <Text>
               <Text style={ styles.normalText }>รีบเข้ารับการรักษาจากแพทย์โดยทันที ซึ่งแพทย์อาจเอกซเรย์ เข้าเฝือกแขน หรือผ่าตัดในกรณีที่กระดูกทะลุผิวหนัง เพื่อฟื้นฟูกระดูกส่วนที่ที่แตกหัก</Text>
+              </Text>
+            </View>
+          </View>
+          <View style={ styles.row }>
+            <View style={ styles.bulletText }>
+            <YouTube
+              apiKey= 'AIzaSyBEi6rci2iIcbhbVCEASvHd7rbhldH30kk'
+              videoId="2U2zFnNOFJw"   // The YouTube video ID
+              startTime= {23}  
+              play={false}             // control playback of video with true/false
+              fullscreen={false}       // control whether the video should play in fullscreen or inline
+              loop={true}             // control whether the video should loop when ended
+              autoplay= {false}
+              onReady={e => this.setState({ isReady: true })}
+              onChangeState={e => this.setState({ status: e.state })}
+              onChangeQuality={e => this.setState({ quality: e.quality })}
+              onError={e => this.setState({ error: e.error })}
+
+              style={{ alignSelf: 'stretch', height: 300 }}
+            />
+            </View>
+          </View>
+          <View style={ styles.row }>
+            <View style={ styles.bullet }>
+              <Text>{'\u2022' + " "}</Text>
+            </View>
+            <View style={ styles.bulletText }>
+              <Text>
+              <Text style={ styles.normalText }>ที่มา : https://www.youtube.com/watch?v=2U2zFnNOFJw</Text>
               </Text>
             </View>
           </View>
@@ -299,8 +342,18 @@ class thirdScreen extends React.Component {
             </View>
             <View style={ styles.bulletText }>
               <Text>
-              <Text style={ styles.normalText }>	เฝ้าสังเกตอาการหมดสติ หรือช็อก</Text>
+              <Text style={ styles.normalText }>เฝ้าสังเกตอาการหมดสติ หรือช็อก</Text>
               </Text>
+            </View>
+          </View>
+          <View style={ styles.row }>
+            <View style={ styles.bullet }>
+              <Text>{'\u2022' + " "}</Text>
+            </View>
+            <View style={ styles.bulletText }>
+            <Image
+              style={{height: 150, margin: 10}}
+              source={{uri: 'https://res.cloudinary.com/dk0z4ums3/image/upload/v1504250431/attached_image_th/%E0%B8%AB%E0%B8%B1%E0%B8%A7%E0%B9%81%E0%B8%95%E0%B8%81%E0%B9%81%E0%B8%A5%E0%B9%89%E0%B8%A7%E0%B8%A3%E0%B8%B1%E0%B8%9A%E0%B8%A1%E0%B8%B7%E0%B8%AD%E0%B8%AD%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%87%E0%B9%84-pobpad.jpg'}}/>
             </View>
           </View>
         </View>
@@ -379,6 +432,35 @@ class fourthScreen extends React.Component {
             <View style={ styles.bulletText }>
               <Text>
                 <Text style={ styles.normalText }>ให้ผู้ช่วยเหลือพาผู้ป่วยที่เป็นลมไปอยู่ในสถานที่ที่มีอากาศถ่ายเทสะดวก หลีกเลี่ยงสถานที่ที่มีผู้คนจอแจ และให้ดมแอมโมเนีย หรือยาดม เพื่อบรรเทาอาการ โดยผู้ช่วยเหลืออาจใช้ผ้าชุบน้ำเช็ดหน้าควบคู่ไปด้วยได้เช่นกัน อย่างไรก็ตาม หากผู้ป่วยยังไม่มีอาการดีขึ้น ควรรีบพาส่งโรงพยาบาลเพื่อตรวจวินิจฉัยโดยแพทย์</Text>
+              </Text>
+            </View>
+          </View>
+          <View style={ styles.row }>
+            <View style={ styles.bulletText }>
+            <YouTube
+              apiKey= 'AIzaSyBEi6rci2iIcbhbVCEASvHd7rbhldH30kk'
+              videoId="9sLvJZtz-sU"   // The YouTube video ID
+              startTime= {118}  
+              play={false}             // control playback of video with true/false
+              fullscreen={false}       // control whether the video should play in fullscreen or inline
+              loop={true}             // control whether the video should loop when ended
+              autoplay= {false}
+              onReady={e => this.setState({ isReady: true })}
+              onChangeState={e => this.setState({ status: e.state })}
+              onChangeQuality={e => this.setState({ quality: e.quality })}
+              onError={e => this.setState({ error: e.error })}
+
+              style={{ alignSelf: 'stretch', height: 300 }}
+            />
+            </View>
+          </View>
+          <View style={ styles.row }>
+            <View style={ styles.bullet }>
+              <Text>{'\u2022' + " "}</Text>
+            </View>
+            <View style={ styles.bulletText }>
+              <Text>
+              <Text style={ styles.normalText }>ที่มา : https://www.youtube.com/watch?v=9sLvJZtz-sU</Text>
               </Text>
             </View>
           </View>
@@ -509,6 +591,16 @@ class fifthScreen extends React.Component {
               <Text>
               <Text style={ styles.normalText }>หากผู้ช่วยเหลือสังเกตพบว่าผู้ป่วยชักอยู่นานเกินกว่า 5 นาที มีอาการชักซ้ำ ๆ ติดกัน หายใจติดขัดผิดปกติ หรือผู้ป่วยได้รับการบาดเจ็บที่รุนแรงระหว่างชัก ควรรีบนำตัวผู้ป่วยส่งโรงพยาบาลเพื่อให้แพทย์ตรวจวินิจฉัยโดยด่วน</Text>
               </Text>
+            </View>
+          </View>
+          <View style={ styles.row }>
+            <View style={ styles.bullet }>
+              <Text>{'\u2022' + " "}</Text>
+            </View>
+            <View style={ styles.bulletText }>
+            <Image
+              style={{height: 500, margin: 10}}
+              source={{uri: 'http://haamor.com/media/images/articlepics/%E0%B9%81%E0%B8%99%E0%B8%A7%E0%B8%97%E0%B8%B2%E0%B8%87%E0%B8%9B%E0%B8%8F%E0%B8%B4%E0%B8%9A%E0%B8%B1%E0%B8%95%E0%B8%B4%E0%B8%AA%E0%B8%B3%E0%B8%AB%E0%B8%A3%E0%B8%B1%E0%B8%9A%E0%B8%9C%E0%B8%B9%E0%B9%89%E0%B8%A1%E0%B8%B5%E0%B8%AD%E0%B8%B2%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%8A%E0%B8%B1%E0%B8%81-1-01.jpg'}}/>
             </View>
           </View>
         </View>

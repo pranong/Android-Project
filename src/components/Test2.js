@@ -317,21 +317,17 @@ class fourthScreen extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      name: 'null',
-      surname: 'null',
-      age: 'null',
+      amount: 'null',
       location: 'null',
       detail: 'null',
-      type: 'null',
+      type: 'เลือกประเภทอุบัติเหตุ',
      }
    }
 
   sendDetail(){
     const uid = this.props.navigation.state.params
     eventRef.child(uid).update({
-      name: this.state.name,
-      surname: this.state.surname,
-      age: this.state.age,
+      amount: this.state.amount,
       location: this.state.location,
       detail: this.state.detail,
       type: this.state.type,
@@ -358,43 +354,39 @@ class fourthScreen extends React.Component {
     return (
       <View style={styles.containers}>
         <View style={styles.inputcontainer}>
-          <TextInput placeholder="ชื่อ (ถ้ามี)" 
-            style={styles.input} 
-            returnKeyType="next" 
-            onSubmitEditing={() => this.firstInput.focus()}
-            onChangeText={(text) => this.setState({name: text})}/>
-          <TextInput placeholder="นามสกุล (ถ้ามี)" 
-            style={styles.input} 
+          <View style={{alignItems: 'center'}}>
+            <Text style={{marginBottom: 5, fontSize: 20}}>กรุณากรอกข้อมูลเบื้องต้น</Text>
+            <Text style={{marginBottom: 25, fontSize: 20}}>ของผู้ได้รับบาดเจ็บ</Text>
+          </View>
+          <ModalSelector
+            style={{height: 40, backgroundColor: 'rgba(180,180,180,0.2)', marginBottom: 10, paddingHorizontal: 10, borderRadius: 10}}
+            data={data}
+            initValue="Select something yummy!"
+            onChange={(option)=>{ this.setState({type:option.label})}}>    
+            <TextInput
+              style={{color: '#000000'}}
+              editable={false}
+              placeholder="โปรดเลือกอุบัติเหตุเบื้องต้น"
+              value={this.state.type} />         
+          </ModalSelector>
+          <TextInput placeholder="รายละเอียด (ถ้ามี)" 
+            multiline={true}
+            numberOfLines={4}
+            style={styles.input} returnKeyType="next" 
+            ref={(input) => this.fourthInput = input}
+            onChangeText={(text) => this.setState({detail: text})}/>
+          <TextInput placeholder="จำนวนผู้ได้รับบาดเจ็บ" 
+            style={styles.input}
+            keyboardType='numeric'
             returnKeyType="next" 
             onSubmitEditing={() => this.secondInput.focus()} 
             ref={(input) => this.firstInput = input}
-            onChangeText={(text) => this.setState({surname: text})}/>
-          <TextInput placeholder="อายุโดยประมาณ" 
-            style={styles.input} 
-            returnKeyType="next" 
-            onSubmitEditing={() => this.thirdInput.focus()} 
-            ref={(input) => this.secondInput = input}
-            onChangeText={(text) => this.setState({age: text})}/>
+            onChangeText={(text) => this.setState({amount: text})}/>
           <TextInput placeholder="สถานที่เกิดเหตุ (ถ้ามี)" 
             style={styles.input} returnKeyType="next" 
             onSubmitEditing={() => this.fourthInput.focus()} 
             ref={(input) => this.thirdInput = input}
             onChangeText={(text) => this.setState({location: text})}/>
-          <TextInput placeholder="รายละเอียดอื่นๆ (ถ้ามี)" 
-            style={styles.input} returnKeyType="next" 
-            ref={(input) => this.fourthInput = input}
-            onChangeText={(text) => this.setState({detail: text})}/>
-          <ModalSelector
-            style={styles.input}
-            data={data}
-            initValue="Select something yummy!"
-            onChange={(option)=>{ this.setState({type:option.label})}}>    
-            <TextInput
-              // style={{borderWidth:1, borderColor:'#ccc', padding:10, height:35,  marginTop:5}}
-              editable={false}
-              placeholder="โปรดเลือกอุบัติเหตุเบื้องต้น"
-              value={this.state.type} />         
-          </ModalSelector>
           <TouchableOpacity style={styles.buttonContainer} onPress={() => this.sendDetail()}>
           <Text style={styles.buttonText}>Submit</Text>
           </TouchableOpacity>
@@ -420,7 +412,7 @@ class thankScreen extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text>Thank you !!</Text>
+        <Text>Reporting Successfully !!</Text>
       </View>
     );
   }
