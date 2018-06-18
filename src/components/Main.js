@@ -210,15 +210,15 @@ function exchange(data) {
 
 function leave(socketId) {
   console.log('leave', socketId);
-  const pc = pcPeers[socketId];
-  const viewIndex = pc.viewIndex;
-  pc.close();
-  delete pcPeers[socketId];
+  // const pc = pcPeers[socketId];
+  // const viewIndex = pc.viewIndex;
+  // pc.close();
+  // delete pcPeers[socketId];
 
-  const remoteList = container.state.remoteList;
-  delete remoteList[socketId]
-  container.setState({ remoteList: remoteList });
-  container.setState({info: 'One peer leave!'});
+  // const remoteList = container.state.remoteList;
+  // delete remoteList[socketId]
+  // container.setState({ remoteList: remoteList });
+  // container.setState({info: 'One peer leave!'});
 }
 
 socket.on('exchange', function(data){
@@ -384,7 +384,7 @@ export default class Test2 extends React.Component {
   onPressLeave(){
     InCallManager.stopRingback();
     this.setState({status: 'ready', remoteList: {}});
-    // disconnect(this.state.call)
+    disconnect(this.state.call)
   }
 
   componentDidMount() {
