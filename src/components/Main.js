@@ -210,15 +210,21 @@ function exchange(data) {
 
 function leave(socketId) {
   console.log('leave', socketId);
-  // const pc = pcPeers[socketId];
-  // const viewIndex = pc.viewIndex;
-  // pc.close();
-  // delete pcPeers[socketId];
+  console.log('myid', container.state.mysocketid);
+  console.log('socid', socketId);
+  if(socketId == container.state.mysocketid){
+    console.log('leave', socketId);
+  }else{
+    const pc = pcPeers[socketId];
+    const viewIndex = pc.viewIndex;
+    pc.close();
+    delete pcPeers[socketId];
 
-  // const remoteList = container.state.remoteList;
-  // delete remoteList[socketId]
-  // container.setState({ remoteList: remoteList });
-  // container.setState({info: 'One peer leave!'});
+    const remoteList = container.state.remoteList;
+    delete remoteList[socketId]
+    container.setState({ remoteList: remoteList });
+    container.setState({info: 'One peer leave!'});
+  }
 }
 
 socket.on('exchange', function(data){
@@ -287,7 +293,7 @@ function onLogin(data){
      //loginContainer.parentElement.removeChild(loginContainer);
      var username = data.username;
      var socketid = data.socketid;
-     container.setState({mysocketid: socketid});
+     container.setState({mysocketid: socketid, info: 'Login Successful ' + socketid});
      console.log("Login Successfull");
      console.log("logged in as :" + username + ", " + socketid + ", " + container.state.mysocketid);
      console.log(data.userlist);
